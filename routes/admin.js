@@ -10,6 +10,13 @@ route.get('/products', adminController.getProducts);
 
 route.post('/add-product', adminController.postAddProduct);
 
+route.post('/edit-product',adminController.postEditProduct);
+
+route.post('/delete-product',adminController.postDeleteProduct);
+
+
+route.get('/edit-product/:productId',adminController.getEditProduct)
+
 
 
 

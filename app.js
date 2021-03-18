@@ -1,24 +1,30 @@
-const express = require('express');
-const bodyParser = require('body-parser')
+const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
 
-const shopRoute = require('./routes/shop');
-const adminRoute = require('./routes/admin');
-const errorController = require('./controllers/error');
+const sequelize = require("./util/database");
 
-app.use(express.static('public'));
-app.use(bodyParser.urlencoded({extended:false}));
+const shopRoute = require("./routes/shop");
+const adminRoute = require("./routes/admin");
+const errorController = require("./controllers/error");
 
-app.set('view engine','ejs');
-app.set('views','views');
+app.use(express.static("public"));
+app.use(bodyParser.urlencoded({ extended: false }));
+
+app.set("view engine", "ejs");
+app.set("views", "views");
 
 app.use(shopRoute);
 
-app.use('/admin',adminRoute);
-
+app.use("/admin", adminRoute);
 
 app.use(errorController.get404);
 
+sequelize
+  .sync()
+  .then(result =>{
 
+    app.listen(5555);
+  })
+  .catch((err) => console.log(err));
 
-app.listen(3001)
