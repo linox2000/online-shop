@@ -1,34 +1,36 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const mongoConnect = require('./util/database')
+const mongoConnect = require('./util/database').mongoConnect;
 
-// const shopRoute = require("./routes/shop");
-// const adminRoute = require("./routes/admin");
-// const errorController = require("./controllers/error");
-// const { cart } = require("./controllers/shop");
+const adminRoute = require("./routes/admin");
+const shopRoute = require("./routes/shop");
+const errorController = require("./controllers/error");
+const User = require('./models/user');
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// app.use((req, res, next) => {
-//   User.findByPk(1)
-//     .then(user =>{
-//       req.user = user;
-//       next();
-//     })
-//     .catch((err) => console.log(err));
-// });
+
 
 app.set("view engine", "ejs");
 app.set("views", "views");
 
-// app.use(shopRoute);
-// app.use("/admin", adminRoute);
-// app.use(errorController.get404);
+app.use((req,res,next)=>{
+  User.findById('605b56044eae61bae4ca452b')
+  .then(user=>{
+    req.user = new User(user.name,user.email,user.cart,user._id) ;
+    next();
+  })
+  .catch(err => console.log(err))
+})
 
-mongoConnect((client)=>{
-  console.log(client);
+app.use("/admin", adminRoute);
+app.use(shopRoute);
+app.use(errorController.get404);
+
+mongoConnect(()=>{
+
   app.listen(5555)
 
 })
