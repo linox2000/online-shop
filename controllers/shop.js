@@ -1,8 +1,10 @@
 const Product = require("../models/product");
+const Order = require('../models/order');
 
 exports.getProducts = (req, res) => {
-  Product.fetchAll()
+  Product.find()
     .then((products) => {
+      console.log(products)
       res.render("shop/product-list", {
         prods: products,
         pageTitle: "Products",
@@ -26,7 +28,7 @@ exports.getProduct = (req, res) => {
 };
 
 exports.getIndex = (req, res) => {
-  Product.fetchAll()
+  Product.find()
     .then((products) => {
       res.render("shop/index", {
         prods: products,
@@ -39,8 +41,10 @@ exports.getIndex = (req, res) => {
 
 exports.cart = (req, res) => {
   req.user
-    .getCart()
-    .then((products) => {
+    .populate('cart.items.productId')
+    .execPopulate()
+    .then((user) => {
+      const products = user.cart.items
       res.render("shop/cart", {
         products: products,
         pageTitle: "Your Cart",
@@ -66,7 +70,7 @@ exports.postCart = (req, res) => {
 exports.postCartDeletProduct = (req, res) => {
   const prodId = req.body.productId;
   req.user
-    .deleteItemFromCart(prodId)
+    .removeFromCart(prodId)
     .then((result) => {
       res.redirect("/cart");
     })
@@ -74,18 +78,35 @@ exports.postCartDeletProduct = (req, res) => {
 };
 
 exports.postOrder = (req, res, next) => {
-  let fetchedCart;
   req.user
-   .addOrder()
+  .populate('cart.items.productId')
+  .execPopulate()
+  .then((user) => {
+    const products = user.cart.items.map(i =>{
+      return {quantity: i.quantity, product:{...i.productId._doc}}
+    });
+    const order = new Order({
+      user:{
+        name:req.user.name,
+        userId : req.user
+      },
+      products: products
+  
+    });
+    return order.save()
+  })
     .then(result => {
+     return req.user.clearCart()
+    })
+    .then(result =>{
       res.redirect('/orders');
+
     })
     .catch(err => console.log(err));
 };
 
 exports.getOrders = (req, res, next) => {
-  req.user
-    .getOrders()
+  Order.find({'user.userId':req.user._id})
     .then(orders => {
       res.render('shop/orders', {
         path: '/orders',

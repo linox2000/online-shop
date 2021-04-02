@@ -8,19 +8,18 @@ exports.getAddProduct = (req, res) => {
   });
 };
 
-exports.postAddProduct = (req, res) => {
+ exports.postAddProduct = (req, res) => {
   const title = req.body.title;
   const imageUrl = req.body.imageUrl;
   const description = req.body.description;
   const price = req.body.price;
-  const product = new Product(
-    title,
-    price,
-    description,
-    imageUrl,
-    null,
-    req.user._id
-  );
+  const product = new Product({
+    title: title,
+    price: price,
+    description: description,
+    imageUrl: imageUrl,
+    userId: req.user
+  });
   product
     .save()
     .then((result) => {
@@ -57,15 +56,15 @@ exports.postEditProduct = (req, res) => {
   const updatedImageUrl = req.body.imageUrl;
   const updatedPrice = req.body.price;
   const updatedDescription = req.body.description;
-  const product = new Product(
-    updatedTitle,
-    updatedPrice,
-    updatedDescription,
-    updatedImageUrl,
-    prodId
-  );
-  product
-    .save()
+
+  Product.findById(prodId)
+  .then(product =>{
+    product.title = updatedTitle;
+    product.price = updatedPrice;
+    product.imageUrl = updatedImageUrl;
+    product.description = updatedDescription
+    return product.save()
+  })
     .then((result) => {
       console.log("UPDATED PRODUCT!");
       res.redirect("/products");
@@ -74,8 +73,11 @@ exports.postEditProduct = (req, res) => {
 };
 
 exports.getProducts = (req, res) => {
-  Product.fetchAll()
+  Product.find()
+  // .select('title price -_id')
+  // .populate('userId')
     .then((products) => {
+      console.log('GetProduct',products);
       res.render("admin/products", {
         prods: products,
         pageTitle: "Admin Product",
@@ -87,11 +89,9 @@ exports.getProducts = (req, res) => {
 
 exports.postDeleteProduct = (req, res) => {
   const prodId = req.body.productId;
-  Product.findById(prodId);
-  Product.deleteById(prodId)
+  Product.removeFromCart(prodId)
     .then((result) => {
-      console.log("Deleted PRODUCT");
-      res.redirect("/admin/products");
+      res.redirect("/cart");
     })
     .catch((err) => console.log(err));
 };
